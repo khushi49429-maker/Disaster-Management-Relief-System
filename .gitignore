@@ -1,7 +1,14 @@
+<<<<<<< HEAD
+=======
+.env
+>>>>>>> a4c440e64c270a1ae2cb78abd2db445f6b737274
 venv/
 .venv/
 __pycache__/
 *.pyc
+<<<<<<< HEAD
 .env
 .DS_Store
 .vscode/
+=======
+>>>>>>> a4c440e64c270a1ae2cb78abd2db445f6b737274
