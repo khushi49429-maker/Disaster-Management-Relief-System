@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}User Dashboard{% endblock %}
+
+{% block content %}
+
+<h2>Welcome, {{ session.get('name') }}</h2>
+
+<p>Manage your emergency requests and relief activities.</p>
+
+
+<div class="row mt-4">
+
+    <div class="col-md-4">
+        <div class="card p-3 text-center">
+
+            <h4>🚨 Emergency</h4>
+
+            <a href="{{ url_for('emergency') }}"
+               class="btn btn-danger">
+                Request Help
+            </a>
+
+        </div>
+    </div>
+
+
+    <div class="col-md-4">
+        <div class="card p-3 text-center">
+
+            <h4>❤️ Donation</h4>
+
+            <a href="{{ url_for('donate') }}"
+               class="btn btn-success">
+                Donate Now
+            </a>
+
+        </div>
+    </div>
+
+
+    <div class="col-md-4">
+        <div class="card p-3 text-center">
+
+            <h4>📢 Alerts</h4>
+
+            <a href="{{ url_for('index') }}"
+               class="btn btn-warning">
+                View Alerts
+            </a>
+
+        </div>
+    </div>
+
+</div>
+
+
+<h3 class="mt-5">My Emergency Requests</h3>
+
+<table class="table table-bordered">
+
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Disaster</th>
+            <th>Location</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Rescue Team</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        {% for r in requests %}
+
+        <tr>
+
+            <td>{{ r.id }}</td>
+            <td>{{ r.disaster_type }}</td>
+            <td>{{ r.location }}</td>
+            <td>{{ r.priority }}</td>
+            <td>{{ r.status }}</td>
+            <td>{{ r.assigned_team or 'Not Assigned' }}</td>
+
+        </tr>
+
+        {% else %}
+
+        <tr>
+            <td colspan="6">No requests found.</td>
+        </tr>
+
+        {% endfor %}
+
+    </tbody>
+
+</table>
+
+{% endblock %}
