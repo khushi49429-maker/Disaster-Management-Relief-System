@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}Emergency Request{% endblock %}
+
+{% block content %}
+
+<div class="form-container">
+
+    <h2>🚨 Emergency Help Request</h2>
+
+    <p>Fill in your emergency details below.</p>
+
+    <form method="POST" action="{{ url_for('emergency') }}">
+
+        <label>Disaster Type</label>
+
+        <select name="disaster_type" class="form-select mb-3" required>
+
+            <option value="">Select Disaster</option>
+            <option>Flood</option>
+            <option>Earthquake</option>
+            <option>Fire</option>
+            <option>Cyclone</option>
+            <option>Landslide</option>
+            <option>Other</option>
+
+        </select>
+
+
+        <label>Location</label>
+
+        <input type="text" name="location"
+               class="form-control mb-3" required>
+
+
+        <label>Number of People Affected</label>
+
+        <input type="number" name="people_affected"
+               class="form-control mb-3" min="1" value="1" required>
+
+
+        <label>Help Required</label>
+
+        <select name="help_needed" class="form-select mb-3">
+
+            <option>Rescue</option>
+            <option>Food</option>
+            <option>Medical</option>
+            <option>Shelter</option>
+            <option>Clothes</option>
+
+        </select>
+
+
+        <label>Priority</label>
+
+        <select name="priority" class="form-select mb-3">
+
+            <option>Low</option>
+            <option>Medium</option>
+            <option>High</option>
+            <option>Critical</option>
+
+        </select>
+
+
+        <label>Emergency Description</label>
+
+        <textarea name="description"
+                  class="form-control mb-3"
+                  rows="4" required></textarea>
+
+
+        <button type="submit" class="btn btn-danger w-100">
+            Submit Emergency Request
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}
