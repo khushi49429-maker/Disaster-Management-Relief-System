@@ -1,0 +1,159 @@
+
+from flask import Blueprint, request, jsonify
+from werkzeug.security import generate_password_hash, check_password_hash
+from database import get_db_connection
+from flask import Blueprint, request, jsonify, session
+
+auth = Blueprint("auth", __name__)
+
+
+# USER REGISTRATION
+@auth.route("/register", methods=["POST"])
+def register():
+
+    data = request.get_json()
+
+    name = data.get("name")
+    email = data.get("email")
+    phone = data.get("phone")
+    gender = data.get("gender")
+    password = data.get("password")
+    confirm_password = data.get("confirm_password")
+
+    # Check required fields
+    if not all([name, email, password, confirm_password]):
+        return jsonify({
+            "message": "Please fill all required fields"
+        }), 400
+
+    # Check password confirmation
+    if password != confirm_password:
+        return jsonify({
+            "message": "Passwords do not match"
+        }), 400
+
+    # Validate gender
+    allowed_genders = ["male", "female", "other", "prefer_not_to_say"]
+
+    if gender and gender not in allowed_genders:
+        return jsonify({
+            "message": "Invalid gender selection"
+        }), 400
+
+    # Hash password
+    hashed_password = generate_password_hash(password)
+
+    db = get_db_connection()
+
+    if db is None:
+        return jsonify({
+            "message": "Database connection failed"
+        }), 500
+
+    cursor = db.cursor()
+
+    try:
+        query = """
+        INSERT INTO users (name, email, phone, gender, password)
+        VALUES (%s, %s, %s, %s, %s)
+        """
+
+        values = (
+            name,
+            email,
+            phone,
+            gender or "prefer_not_to_say",
+            hashed_password
+        )
+
+        cursor.execute(query, values)
+        db.commit()
+
+        return jsonify({
+            "message": "Registration successful"
+        }), 201
+
+    except Exception as error:
+        db.rollback()
+        return jsonify({
+            "message": "Registration failed",
+            "error": str(error)
+        }), 400
+
+    finally:
+        cursor.close()
+        db.close()
+
+
+# USER LOGIN
+@auth.route("/login", methods=["POST"])
+def login():
+
+    data = request.get_json()
+
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not password:
+        return jsonify({
+            "message": "Email and password are required"
+        }), 400
+
+    db = get_db_connection()
+
+    print("LOGIN DB CONNECTION:", db)
+    print("LOGIN DB CONNECTED:",db.is_connected() if db else "None")
+
+    if db is None:
+        return jsonify({
+            "message": "Database connection failed"
+        }), 500
+
+    cursor = db.cursor()
+
+    try:
+        query = """
+        SELECT user_id, name, email, phone, gender, password, role
+        FROM users
+        WHERE email = %s
+        """
+
+        cursor.execute(query, (email,))
+        user = cursor.fetchone()
+
+        if user is None:
+            return jsonify({
+                "message": "Invalid email or password"
+            }), 401
+
+        stored_password = user[5]
+
+        if not check_password_hash(stored_password, password):
+            return jsonify({
+                "message": "Invalid email or password"
+            }), 401
+
+        session["user_id"] = user[0]
+        session["role"] = user[6]
+
+        return jsonify({
+            "message": "Login successful",
+            "user": {
+                "user_id": user[0],
+                "name": user[1],
+                "email": user[2],
+                "phone": user[3],
+                "gender": user[4],
+                "role": user[6]
+            }
+        }), 200
+
+    except Exception as error:
+        return jsonify({
+            "message": "Login failed",
+            "error": str(error)
+        }), 500
+
+    finally:
+        cursor.close()
+        db.close()
