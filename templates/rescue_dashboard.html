@@ -1,47 +1,122 @@
+
 {% extends 'base.html' %}
 
 {% block title %}Rescue Team{% endblock %}
 
 {% block content %}
 
-<h2>🚑 Rescue Team Dashboard</h2>
+<div class="container py-5">
 
-<p>Manage rescue operations and assigned requests.</p>
+    <h2>🚑 Rescue Team Dashboard</h2>
+    <p>View and manage reported emergencies.</p>
 
-<table class="table table-bordered">
+    <div id="message"></div>
 
-    <thead>
-        <tr>
-            <th>Request ID</th>
-            <th>Disaster</th>
-            <th>Location</th>
-            <th>Priority</th>
-            <th>Status</th>
-        </tr>
-    </thead>
+    <div class="table-responsive">
 
-    <tbody>
+        <table class="table table-bordered table-striped">
 
-        {% for r in requests %}
+            <thead class="table-dark">
+                <tr>
+                    <th>Emergency ID</th>
+                    <th>Title</th>
+                    <th>Disaster</th>
+                    <th>Location</th>
+                    <th>People Affected</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
 
-        <tr>
-            <td>{{ r.id }}</td>
-            <td>{{ r.disaster_type }}</td>
-            <td>{{ r.location }}</td>
-            <td>{{ r.priority }}</td>
-            <td>{{ r.status }}</td>
-        </tr>
+            <tbody id="emergencyTable">
+                <tr>
+                    <td colspan="7" class="text-center">
+                        Loading emergencies...
+                    </td>
+                </tr>
+            </tbody>
 
-        {% else %}
+        </table>
 
-        <tr>
-            <td colspan="5">No rescue assignments available.</td>
-        </tr>
+    </div>
 
-        {% endfor %}
+</div>
 
-    </tbody>
+<script>
 
-</table>
+async function loadEmergencies() {
+
+    const table = document.getElementById("emergencyTable");
+    const message = document.getElementById("message");
+
+    try {
+
+        const response = await fetch("/emergencies");
+        const result = await response.json();
+
+        table.innerHTML = "";
+
+        if (!response.ok) {
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7">${result.message}</td>
+                </tr>
+            `;
+            return;
+        }
+
+        if (!result.emergencies || result.emergencies.length === 0) {
+
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center">
+                        No emergency reports available.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        result.emergencies.forEach(function(e) {
+
+            const row = document.createElement("tr");
+
+            const values = [
+                e.emergency_id,
+                e.title,
+                e.disaster_type,
+                e.location,
+                e.people_affected,
+                e.severity,
+                e.status
+            ];
+
+            values.forEach(function(value) {
+
+                const cell = document.createElement("td");
+                cell.textContent = value ?? "N/A";
+                row.appendChild(cell);
+
+            });
+
+            table.appendChild(row);
+
+        });
+
+    } catch (error) {
+
+        message.innerHTML =
+            '<div class="alert alert-danger">Unable to load emergency reports.</div>';
+
+        console.error(error);
+
+    }
+
+}
+
+loadEmergencies();
+
+</script>
 
 {% endblock %}

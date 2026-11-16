@@ -1,1 +1,793 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard | ResQNow</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f4f6f9;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            background: #172554;
+        }
+
+        .dashboard-title {
+            color: #172554;
+            font-weight: bold;
+        }
+
+        .stat-card {
+            border: none;
+            border-radius: 12px;
+            padding: 20px;
+            height: 100%;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+        }
+
+        .stat-card h6 {
+            color: #64748b;
+        }
+
+        .stat-card h2 {
+            color: #172554;
+            font-weight: bold;
+        }
+
+        .stat-icon {
+            font-size: 28px;
+        }
+
+        .section-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+        }
+
+        .table th {
+            background: #172554;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-dark px-4 py-3">
+        <a class="navbar-brand fw-bold" href="/">
+            🚨 ResQNow Admin
+        </a>
+
+        <div>
+            <a href="/" class="btn btn-outline-light btn-sm">Home</a>
+            <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+        </div>
+    </nav>
+
+    <!-- DASHBOARD -->
+    <div class="container py-5">
+
+        <div class="mb-4">
+            <h2 class="dashboard-title">Admin Dashboard</h2>
+            <p class="text-muted">
+                Monitor users, emergencies, rescue operations and donations.
+            </p>
+        </div>
+
+        <div id="errorMessage" class="alert alert-danger d-none"></div>
+        <div id="successMessage" class="alert alert-success d-none"></div>
+
+        <div id="loadingMessage" class="text-center py-5">
+            Loading dashboard data...
+        </div>
+
+        <!-- STATISTICS -->
+        <div class="row g-4" id="dashboardCards"></div>
+
+        <!-- USER MANAGEMENT -->
+        <div class="card section-card mt-5">
+
+            <div class="card-header bg-white py-3">
+                <h4 class="dashboard-title mb-1">👥 User Management</h4>
+                <p class="text-muted mb-0">
+                    View registered users and manage their roles.
+                </p>
+            </div>
+
+            <div class="card-body">
+
+                <div id="usersLoading" class="text-center py-3">
+                    Loading users...
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Gender</th>
+                                <th>Role</th>
+                                <th>Change Role</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="usersTable"></tbody>
+                    </table>
+                </div>
+
+                <div id="noUsers" class="text-center text-muted d-none">
+                    No users found.
+                </div>
+
+            </div>
+        </div>
+
+        <!-- EMERGENCY MANAGEMENT -->
+        <div class="card section-card mt-5">
+
+            <div class="card-header bg-white py-3">
+                <h4 class="dashboard-title mb-1">🚨 Emergency Management</h4>
+                <p class="text-muted mb-0">
+                    View emergency reports and update their status.
+                </p>
+            </div>
+
+            <div class="card-body">
+
+                <div id="emergenciesLoading" class="text-center py-3">
+                    Loading emergencies...
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Disaster Type</th>
+                                <th>Location</th>
+                                <th>Severity</th>
+                                <th>People Affected</th>
+                                <th>Status</th>
+                                <th>Update Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="emergenciesTable"></tbody>
+                    </table>
+                </div>
+
+                <div id="noEmergencies" class="text-center text-muted d-none">
+                    No emergency reports found.
+                </div>
+
+            </div>
+        </div>
+
+        <!-- RESCUE REQUEST MANAGEMENT -->
+        <div class="card section-card mt-5">
+
+            <div class="card-header bg-white py-3">
+                <h4 class="dashboard-title mb-1">🚑 Rescue Request Management</h4>
+                <p class="text-muted mb-0">
+                    Monitor rescue requests and track their progress.
+                </p>
+            </div>
+
+            <div class="card-body">
+
+                <div id="rescueLoading" class="text-center py-3">
+                    Loading rescue requests...
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>Request ID</th>
+                                <th>Emergency ID</th>
+                                <th>Requested By</th>
+                                <th>Assigned Volunteer ID</th>
+                                <th>Request Details</th>
+                                <th>Status</th>
+                                <th>Update Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="rescueTable"></tbody>
+                    </table>
+                </div>
+
+                <div id="noRescue" class="text-center text-muted d-none">
+                    No rescue requests found.
+                </div>
+
+            </div>
+        </div>
+
+        <!-- DONATION MANAGEMENT -->
+        <div class="card section-card mt-5">
+
+            <div class="card-header bg-white py-3">
+                <h4 class="dashboard-title mb-1">💰 Donation Management</h4>
+                <p class="text-muted mb-0">
+                    Monitor donations and update their status.
+                </p>
+            </div>
+
+            <div class="card-body">
+
+                <div id="donationsLoading" class="text-center py-3">
+                    Loading donations...
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>Donation ID</th>
+                                <th>Donor Name</th>
+                                <th>Donation Type</th>
+                                <th>Amount</th>
+                                <th>Quantity</th>
+                                <th>Emergency ID</th>
+                                <th>Status</th>
+                                <th>Update Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="donationsTable"></tbody>
+                    </table>
+                </div>
+
+                <div id="noDonations" class="text-center text-muted d-none">
+                    No donations found.
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+
+        // DISPLAY MESSAGES
+        function showMessage(type, message) {
+            const element = document.getElementById(type);
+            element.textContent = message;
+            element.classList.remove("d-none");
+
+            setTimeout(() => {
+                element.classList.add("d-none");
+            }, 4000);
+        }
+
+        // ESCAPE USER DATA BEFORE DISPLAYING
+        function escapeHTML(value) {
+            return String(value ?? "").replace(/[&<>"']/g, char => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;"
+            })[char]);
+        }
+
+        // LOAD DASHBOARD STATISTICS
+        async function loadDashboard() {
+
+            const loading = document.getElementById("loadingMessage");
+            const errorMessage = document.getElementById("errorMessage");
+            const dashboardCards = document.getElementById("dashboardCards");
+
+            try {
+                const response = await fetch("/admin/dashboard");
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || "Unable to load dashboard");
+                }
+
+                const dashboard = result.dashboard;
+
+                if (!dashboard || Object.keys(dashboard).length === 0) {
+                    throw new Error("No dashboard data available.");
+                }
+
+                const icons = ["👥", "🙋", "🚨", "🚑", "💰", "📦"];
+
+                let html = "";
+
+                Object.entries(dashboard).forEach(([key, value], index) => {
+
+                    const title = key
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, letter => letter.toUpperCase());
+
+                    html += `
+                        <div class="col-md-4 col-sm-6">
+                            <div class="card stat-card">
+                                <div class="stat-icon">${icons[index % icons.length]}</div>
+                                <h6 class="mt-3">${title}</h6>
+                                <h2>${value ?? 0}</h2>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                dashboardCards.innerHTML = html;
+
+            } catch (error) {
+
+                errorMessage.textContent = error.message;
+                errorMessage.classList.remove("d-none");
+
+            } finally {
+                loading.classList.add("d-none");
+            }
+        }
+
+        // LOAD ALL USERS
+        async function loadUsers() {
+
+            const loading = document.getElementById("usersLoading");
+            const usersTable = document.getElementById("usersTable");
+            const noUsers = document.getElementById("noUsers");
+
+            try {
+
+                const response = await fetch("/admin/users");
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || "Unable to fetch users");
+                }
+
+                const users = result.users || [];
+
+                usersTable.innerHTML = "";
+
+                if (users.length === 0) {
+                    noUsers.classList.remove("d-none");
+                    return;
+                }
+
+                noUsers.classList.add("d-none");
+
+                users.forEach(user => {
+
+                    const isAdmin = user.role === "admin";
+
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${escapeHTML(user.user_id)}</td>
+                        <td>${escapeHTML(user.name)}</td>
+                        <td>${escapeHTML(user.email)}</td>
+                        <td>${escapeHTML(user.phone || "N/A")}</td>
+                        <td>${escapeHTML(user.gender || "N/A")}</td>
+
+                        <td>
+                            <span class="badge ${
+                                isAdmin ? "bg-danger" :
+                                user.role === "volunteer" ? "bg-success" : "bg-primary"
+                            }">
+                                ${escapeHTML(user.role)}
+                            </span>
+                        </td>
+
+                        <td>
+                            <select
+                                class="form-select form-select-sm role-select"
+                                data-user-id="${escapeHTML(user.user_id)}"
+                                ${isAdmin ? "disabled" : ""}
+                            >
+                                <option value="user" ${user.role === "user" ? "selected" : ""}>
+                                    User
+                                </option>
+
+                                <option value="volunteer" ${user.role === "volunteer" ? "selected" : ""}>
+                                    Volunteer
+                                </option>
+                            </select>
+                        </td>
+                    `;
+
+                    usersTable.appendChild(row);
+                });
+
+            } catch (error) {
+
+                showMessage("errorMessage", error.message);
+
+            } finally {
+                loading.classList.add("d-none");
+            }
+        }
+
+        // UPDATE USER ROLE
+        document.getElementById("usersTable").addEventListener("change", async function(event) {
+
+            if (!event.target.classList.contains("role-select")) {
+                return;
+            }
+
+            const select = event.target;
+            const userId = select.dataset.userId;
+            const newRole = select.value;
+
+            select.disabled = true;
+
+            try {
+
+                const response = await fetch(`/admin/users/${userId}/role`, {
+                    method: "PUT",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        role: newRole
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || "Role update failed");
+                }
+
+                showMessage("successMessage", "User role updated successfully!");
+
+                await loadUsers();
+
+            } catch (error) {
+
+                showMessage("errorMessage", error.message);
+                await loadUsers();
+
+            }
+
+        });
+
+        // LOAD ALL EMERGENCY REPORTS
+        async function loadEmergencies() {
+
+            const loading = document.getElementById("emergenciesLoading");
+            const table = document.getElementById("emergenciesTable");
+            const noEmergencies = document.getElementById("noEmergencies");
+
+            try {
+                const response = await fetch("/admin/emergencies");
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || "Unable to load emergencies");
+                }
+
+                const emergencies = result.emergencies || [];
+
+                table.innerHTML = "";
+
+                if (emergencies.length === 0) {
+                    noEmergencies.classList.remove("d-none");
+                    return;
+                }
+
+                noEmergencies.classList.add("d-none");
+
+                emergencies.forEach(emergency => {
+
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${escapeHTML(emergency.emergency_id)}</td>
+                        <td>${escapeHTML(emergency.title)}</td>
+                        <td>${escapeHTML(emergency.disaster_type)}</td>
+                        <td>${escapeHTML(emergency.location)}</td>
+                        <td>${escapeHTML(emergency.severity)}</td>
+                        <td>${escapeHTML(emergency.people_affected)}</td>
+                        <td>
+                            <span class="badge bg-primary">
+                                ${escapeHTML(emergency.status)}
+                            </span>
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm emergency-status"
+                                data-id="${escapeHTML(emergency.emergency_id)}">
+
+                                <option value="reported" ${emergency.status === "reported" ? "selected" : ""}>Reported</option>
+                                <option value="verified" ${emergency.status === "verified" ? "selected" : ""}>Verified</option>
+                                <option value="in_progress" ${emergency.status === "in_progress" ? "selected" : ""}>In Progress</option>
+                                <option value="resolved" ${emergency.status === "resolved" ? "selected" : ""}>Resolved</option>
+
+                            </select>
+                        </td>
+                    `;
+
+                    table.appendChild(row);
+                });
+
+            } catch (error) {
+                showMessage("errorMessage", error.message);
+            } finally {
+                loading.classList.add("d-none");
+            }
+        }
+
+        // UPDATE EMERGENCY STATUS
+        document.getElementById("emergenciesTable").addEventListener("change", async function(event) {
+
+            if (!event.target.classList.contains("emergency-status")) {
+                return;
+            }
+
+            const select = event.target;
+            const emergencyId = select.dataset.id;
+            const newStatus = select.value;
+
+            select.disabled = true;
+
+            try {
+                const response = await fetch(`/admin/emergencies/${emergencyId}/status`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        status: newStatus
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || "Status update failed");
+                }
+
+                showMessage("successMessage", "Emergency status updated successfully!");
+
+                await loadEmergencies();
+
+            } catch (error) {
+                showMessage("errorMessage", error.message);
+                await loadEmergencies();
+            }
+        });
+
+        // LOAD RESCUE REQUESTS
+        async function loadRescueRequests() {
+
+            const loading = document.getElementById("rescueLoading");
+            const table = document.getElementById("rescueTable");
+            const noRescue = document.getElementById("noRescue");
+
+            try {
+                const response = await fetch("/admin/rescue-requests");
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || "Unable to load rescue requests");
+                }
+
+                const requests = result.rescue_requests || [];
+
+                table.innerHTML = "";
+
+                if (requests.length === 0) {
+                    noRescue.classList.remove("d-none");
+                    return;
+                }
+
+                noRescue.classList.add("d-none");
+
+                requests.forEach(request => {
+
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${escapeHTML(request.request_id)}</td>
+                        <td>${escapeHTML(request.emergency_id)}</td>
+                        <td>${escapeHTML(request.requested_by)}</td>
+                        <td>${escapeHTML(request.assigned_to || "Not Assigned")}</td>
+                        <td>${escapeHTML(request.request_details)}</td>
+                        <td>
+                            <span class="badge bg-primary">
+                                ${escapeHTML(request.status)}
+                            </span>
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm rescue-status"
+                                data-id="${escapeHTML(request.request_id)}">
+
+                                <option value="pending" ${request.status === "pending" ? "selected" : ""}>Pending</option>
+                                <option value="accepted" ${request.status === "accepted" ? "selected" : ""}>Accepted</option>
+                                <option value="in_progress" ${request.status === "in_progress" ? "selected" : ""}>In Progress</option>
+                                <option value="completed" ${request.status === "completed" ? "selected" : ""}>Completed</option>
+
+                            </select>
+                        </td>
+                    `;
+
+                    table.appendChild(row);
+                });
+
+            } catch (error) {
+                showMessage("errorMessage", error.message);
+            } finally {
+                loading.classList.add("d-none");
+            }
+        }
+
+        // UPDATE RESCUE REQUEST STATUS
+        document.getElementById("rescueTable").addEventListener("change", async function(event) {
+
+            if (!event.target.classList.contains("rescue-status")) {
+                return;
+            }
+
+            const select = event.target;
+            const requestId = select.dataset.id;
+            const newStatus = select.value;
+
+            select.disabled = true;
+
+            try {
+                const response = await fetch(`/admin/rescue-requests/${requestId}/status`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        status: newStatus
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || "Status update failed");
+                }
+
+                showMessage("successMessage", "Rescue request status updated!");
+
+                await loadRescueRequests();
+
+            } catch (error) {
+                showMessage("errorMessage", error.message);
+                await loadRescueRequests();
+            }
+        });
+
+        // LOAD ALL DONATIONS
+        async function loadDonations() {
+
+            const loading = document.getElementById("donationsLoading");
+            const table = document.getElementById("donationsTable");
+            const noDonations = document.getElementById("noDonations");
+
+            try {
+                const response = await fetch("/admin/donations");
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || "Unable to load donations");
+                }
+
+                const donations = result.donations || [];
+
+                table.innerHTML = "";
+
+                if (donations.length === 0) {
+                    noDonations.classList.remove("d-none");
+                    return;
+                }
+
+                noDonations.classList.add("d-none");
+
+                donations.forEach(donation => {
+
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${escapeHTML(donation.donation_id)}</td>
+                        <td>${escapeHTML(donation.donor_name || donation.doner_name || donation.doner_id || "N/A")}</td>
+                        <td>${escapeHTML(donation.donation_type)}</td>
+                        <td>${escapeHTML(donation.amount ?? "N/A")}</td>
+                        <td>${escapeHTML(donation.quantity ?? "N/A")}</td>
+                        <td>${escapeHTML(donation.emergency_id ?? "N/A")}</td>
+                        <td>
+                            <span class="badge bg-primary">
+                                ${escapeHTML(donation.status)}
+                            </span>
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm donation-status"
+                                data-id="${escapeHTML(donation.donation_id)}">
+
+                                <option value="pending" ${donation.status === "pending" ? "selected" : ""}>Pending</option>
+                                <option value="received" ${donation.status === "received" ? "selected" : ""}>Received</option>
+                                <option value="distributed" ${donation.status === "distributed" ? "selected" : ""}>Distributed</option>
+
+                            </select>
+                        </td>
+                    `;
+
+                    table.appendChild(row);
+                });
+
+            } catch (error) {
+                showMessage("errorMessage", error.message);
+            } finally {
+                loading.classList.add("d-none");
+            }
+        }
+
+        // UPDATE DONATION STATUS
+        document.getElementById("donationsTable").addEventListener("change", async function(event) {
+
+            if (!event.target.classList.contains("donation-status")) {
+                return;
+            }
+
+            const select = event.target;
+            const donationId = select.dataset.id;
+            const newStatus = select.value;
+
+            select.disabled = true;
+
+            try {
+                const response = await fetch(`/admin/donations/${donationId}/status`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        status: newStatus
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || "Donation status update failed");
+                }
+
+                showMessage("successMessage", "Donation status updated successfully!");
+
+                await loadDonations();
+
+            } catch (error) {
+                showMessage("errorMessage", error.message);
+                await loadDonations();
+            }
+        });
+
+        // LOAD ALL DASHBOARD SECTIONS
+        loadDashboard();
+        loadUsers();
+        loadEmergencies();
+        loadRescueRequests();
+        loadDonations();
+
+    </script>
+
+</body>
+</html>

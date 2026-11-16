@@ -1,0 +1,253 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Emergency Request{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <div class="form-container mx-auto" style="max-width: 650px;">
+
+        <h2 class="text-center mb-3">🚨 Emergency Help Request</h2>
+
+        <p class="text-center">Fill in your emergency details below.</p>
+
+        <div id="message"></div>
+
+        <form id="emergencyForm">
+
+            <label class="form-label">Emergency Title</label>
+            <input type="text" id="title"
+                   class="form-control mb-3"
+                   placeholder="Example: Flood emergency in Delhi"
+                   required>
+
+            <label class="form-label">Disaster Type</label>
+            <select id="disaster_type" class="form-select mb-3" required>
+                <option value="">Select Disaster</option>
+                <option>Flood</option>
+                <option>Earthquake</option>
+                <option>Fire</option>
+                <option>Cyclone</option>
+                <option>Landslide</option>
+                <option>Other</option>
+            </select>
+
+            <label class="form-label">Location</label>
+            <input type="text" id="location"
+                   class="form-control mb-3"
+                   placeholder="Enter affected location"
+                   required>
+
+            <label class="form-label">Number of People Affected</label>
+            <input type="number" id="people_affected"
+                   class="form-control mb-3"
+                   min="1" value="1" required>
+
+            <label class="form-label">Help Required</label>
+            <select id="help_needed" class="form-select mb-3">
+                <option>Rescue</option>
+                <option>Food</option>
+                <option>Medical</option>
+                <option>Shelter</option>
+                <option>Clothes</option>
+            </select>
+
+            <label class="form-label">Priority</label>
+            <select id="severity" class="form-select mb-3">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+            </select>
+
+            <label class="form-label">Emergency Description</label>
+            <textarea id="description"
+                      class="form-control mb-3"
+                      rows="4"
+                      placeholder="Describe the emergency..."
+                      required></textarea>
+
+            <button type="submit" class="btn btn-danger w-100">
+                Submit Emergency Request
+            </button>
+
+        </form>
+    </div>
+
+    <div class="mt-5">
+        <h3 class="mb-3">📋 Recent Emergency Reports</h3>
+
+        <div id="emergencyReports">
+            Loading emergency reports...
+        </div>
+    </div>
+
+</div>
+
+<script id="user-data" type="application/json">
+    {{ session.get('user_id') | tojson }}
+</script>
+
+<script>
+
+// Get logged-in user ID
+const currentUserId = JSON.parse(
+    document.getElementById("user-data").textContent
+);
+
+const form = document.getElementById("emergencyForm");
+const message = document.getElementById("message");
+const reportsContainer = document.getElementById("emergencyReports");
+
+
+// Submit emergency report
+form.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    if (!currentUserId) {
+        message.innerHTML =
+            '<div class="alert alert-warning">Please login before submitting an emergency request.</div>';
+        return;
+    }
+
+    const helpNeeded = document.getElementById("help_needed").value;
+    const description = document.getElementById("description").value;
+
+    const emergencyData = {
+        user_id: currentUserId,
+        title: document.getElementById("title").value,
+        disaster_type: document.getElementById("disaster_type").value,
+        location: document.getElementById("location").value,
+        people_affected: document.getElementById("people_affected").value,
+        severity: document.getElementById("severity").value,
+        description: "Help Required: " + helpNeeded + "\n" + description
+    };
+
+    try {
+
+        const response = await fetch("/emergencies", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(emergencyData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+
+            message.innerHTML =
+                '<div class="alert alert-success">' +
+                result.message + ' (Request ID: ' +
+                result.emergency_id + ')</div>';
+
+            form.reset();
+
+            await loadEmergencyReports();
+
+        } else {
+
+            message.innerHTML =
+                '<div class="alert alert-danger">' +
+                (result.message || "Something went wrong") +
+                '</div>';
+        }
+
+    } catch (error) {
+
+        message.innerHTML =
+            '<div class="alert alert-danger">Unable to connect to the server.</div>';
+
+        console.error(error);
+    }
+});
+
+
+// Fetch emergency reports
+async function loadEmergencyReports() {
+
+    try {
+
+        const response = await fetch("/emergencies");
+        const result = await response.json();
+
+        reportsContainer.innerHTML = "";
+
+        if (!response.ok) {
+            reportsContainer.textContent =
+                result.message || "Unable to fetch emergency reports.";
+            return;
+        }
+
+        if (!result.emergencies || result.emergencies.length === 0) {
+            reportsContainer.textContent =
+                "No emergency reports available.";
+            return;
+        }
+
+        const table = document.createElement("table");
+        table.className = "table table-bordered table-striped";
+
+        const thead = document.createElement("thead");
+        thead.innerHTML = `
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Disaster</th>
+                <th>Location</th>
+                <th>People</th>
+                <th>Severity</th>
+                <th>Status</th>
+            </tr>
+        `;
+
+        const tbody = document.createElement("tbody");
+
+        result.emergencies.forEach(function(item) {
+
+            const row = document.createElement("tr");
+
+            const values = [
+                item.emergency_id,
+                item.title,
+                item.disaster_type,
+                item.location,
+                item.people_affected,
+                item.severity,
+                item.status
+            ];
+
+            values.forEach(function(value) {
+                const cell = document.createElement("td");
+                cell.textContent = value ?? "N/A";
+                row.appendChild(cell);
+            });
+
+            tbody.appendChild(row);
+        });
+
+        table.appendChild(thead);
+        table.appendChild(tbody);
+
+        reportsContainer.appendChild(table);
+
+    } catch (error) {
+
+        reportsContainer.textContent =
+            "Unable to load emergency reports.";
+
+        console.error(error);
+    }
+}
+
+
+// Load reports when page opens
+loadEmergencyReports();
+
+</script>
+
+{% endblock %}

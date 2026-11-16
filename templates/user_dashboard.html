@@ -1,100 +1,139 @@
+
 {% extends 'base.html' %}
 
 {% block title %}User Dashboard{% endblock %}
 
 {% block content %}
 
-<h2>Welcome, {{ session.get('name') }}</h2>
+<div class="container mt-4">
 
-<p>Manage your emergency requests and relief activities.</p>
+    <h2>Welcome, {{ session.get('name') }}</h2>
+    <p>Manage your emergency requests and relief activities.</p>
 
+    <div class="row mt-4">
 
-<div class="row mt-4">
+        <!-- Emergency Card -->
+        <div class="col-md-4 mb-3">
+            <div class="card p-3 text-center h-100">
+                <h4>🚨 Emergency</h4>
+                <p>Request help during an emergency.</p>
 
-    <div class="col-md-4">
-        <div class="card p-3 text-center">
-
-            <h4>🚨 Emergency</h4>
-
-            <a href="{{ url_for('emergency') }}"
-               class="btn btn-danger">
-                Request Help
-            </a>
-
+                <a href="{{ url_for('emergency_page') }}" class="btn btn-danger">
+                    Request Help
+                </a>
+            </div>
         </div>
-    </div>
 
+        <!-- Donation Card -->
+        <div class="col-md-4 mb-3">
+            <div class="card p-3 text-center h-100">
+                <h4>❤️ Donation</h4>
+                <p>Support people affected by disasters.</p>
 
-    <div class="col-md-4">
-        <div class="card p-3 text-center">
-
-            <h4>❤️ Donation</h4>
-
-            <a href="{{ url_for('donate') }}"
-               class="btn btn-success">
-                Donate Now
-            </a>
-
+                <a href="{{ url_for('donate_page') }}" class="btn btn-success">
+                    Donate Now
+                </a>
+            </div>
         </div>
-    </div>
 
+        <!-- Alerts Card -->
+        <div class="col-md-4 mb-3">
+            <div class="card p-3 text-center h-100">
+                <h4>📢 Alerts</h4>
+                <p>View the latest disaster alerts.</p>
 
-    <div class="col-md-4">
-        <div class="card p-3 text-center">
-
-            <h4>📢 Alerts</h4>
-
-            <a href="{{ url_for('index') }}"
-               class="btn btn-warning">
-                View Alerts
-            </a>
-
+                <a href="{{ url_for('alerts_page') }}" class="btn btn-warning">
+                    View Alerts
+                </a>
+            </div>
         </div>
+
     </div>
-
-</div>
-
-
 <h3 class="mt-5">My Emergency Requests</h3>
 
-<table class="table table-bordered">
+<div class="table-responsive">
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Disaster</th>
+                <th>Location</th>
+                <th>People Affected</th>
+                <th>Severity</th>
+                <th>Status</th>
+            </tr>
+        </thead>
 
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Disaster</th>
-            <th>Location</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Rescue Team</th>
-        </tr>
-    </thead>
+        <tbody id="myRequests">
+            <tr>
+                <td colspan="6" class="text-center">Loading...</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
 
-    <tbody>
+<script type="application/json" id="current-user">
+    {{ session.get('user_id') | tojson }}
+</script>
 
-        {% for r in requests %}
+<script>
+async function loadMyRequests() {
+    const table = document.getElementById("myRequests");
+    const userId = JSON.parse(
+        document.getElementById("current-user").textContent
+    );
 
-        <tr>
+    try {
+        const response = await fetch("/emergencies");
+        const data = await response.json();
 
-            <td>{{ r.id }}</td>
-            <td>{{ r.disaster_type }}</td>
-            <td>{{ r.location }}</td>
-            <td>{{ r.priority }}</td>
-            <td>{{ r.status }}</td>
-            <td>{{ r.assigned_team or 'Not Assigned' }}</td>
+        const myRequests = data.emergencies.filter(
+            r => String(r.user_id) === String(userId)
+        );
 
-        </tr>
+        table.innerHTML = "";
 
-        {% else %}
+        if (myRequests.length === 0) {
+            table.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center">
+                        No emergency requests found.
+                    </td>
+                </tr>`;
+            return;
+        }
 
-        <tr>
-            <td colspan="6">No requests found.</td>
-        </tr>
+        myRequests.forEach(r => {
+            const row = document.createElement("tr");
 
-        {% endfor %}
+            [
+                r.emergency_id,
+                r.disaster_type,
+                r.location,
+                r.people_affected,
+                r.severity,
+                r.status
+            ].forEach(value => {
+                const cell = document.createElement("td");
+                cell.textContent = value ?? "";
+                row.appendChild(cell);
+            });
 
-    </tbody>
+            table.appendChild(row);
+        });
 
-</table>
+    } catch (error) {
+        console.error(error);
+        table.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-danger text-center">
+                    Unable to load emergency requests.
+                </td>
+            </tr>`;
+    }
+}
 
+loadMyRequests();
+</script>
+</div>
 {% endblock %}

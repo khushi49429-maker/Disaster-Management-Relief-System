@@ -1,0 +1,147 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Donate - ResQNow{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5 mb-5">
+
+    <div class="card shadow p-4 mx-auto" style="max-width: 600px;">
+
+        <h2 class="text-center mb-3">❤️ Support Disaster Relief</h2>
+        <p class="text-center text-muted">
+            Your donation can help people affected by disasters.
+        </p>
+
+        <form id="donationForm">
+
+            <input type="hidden" id="donor_id"
+                   value="{{ session.get('user_id') }}">
+
+            <div class="mb-3">
+                <label class="form-label">Emergency ID (Optional)</label>
+                <input type="number" id="emergency_id"
+                       class="form-control"
+                       placeholder="Enter emergency ID if applicable">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Donation Type</label>
+                <select id="donation_type" class="form-select" required>
+                    <option value="">Select donation type</option>
+                    <option value="money">Money</option>
+                    <option value="material">Material</option>
+                </select>
+            </div>
+
+            <div id="moneyFields" style="display:none;">
+                <div class="mb-3">
+                    <label class="form-label">Amount (₹)</label>
+                    <input type="number" id="amount"
+                           class="form-control" min="1"
+                           placeholder="Enter amount">
+                </div>
+            </div>
+
+            <div id="materialFields" style="display:none;">
+                <div class="mb-3">
+                    <label class="form-label">Item Name</label>
+                    <input type="text" id="item_name"
+                           class="form-control"
+                           placeholder="Example: Food packets">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" id="quantity"
+                           class="form-control" min="1"
+                           placeholder="Enter quantity">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-success w-100">
+                Submit Donation
+            </button>
+
+        </form>
+
+        <div id="donationMessage" class="mt-3"></div>
+
+    </div>
+
+</div>
+
+<script>
+const donationType = document.getElementById("donation_type");
+
+donationType.addEventListener("change", function () {
+    document.getElementById("moneyFields").style.display =
+        this.value === "money" ? "block" : "none";
+
+    document.getElementById("materialFields").style.display =
+        this.value === "material" ? "block" : "none";
+});
+
+document.getElementById("donationForm").addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    const donorId = document.getElementById("donor_id").value;
+    const type = donationType.value;
+
+    if (!donorId) {
+        document.getElementById("donationMessage").innerHTML =
+            '<div class="alert alert-danger">Please login first.</div>';
+        return;
+    }
+
+    const data = {
+        donor_id: parseInt(donorId),
+        emergency_id: document.getElementById("emergency_id").value
+            ? parseInt(document.getElementById("emergency_id").value)
+            : null,
+        donation_type: type,
+        amount: type === "money"
+            ? document.getElementById("amount").value
+            : null,
+        item_name: type === "material"
+            ? document.getElementById("item_name").value
+            : null,
+        quantity: type === "material"
+            ? document.getElementById("quantity").value
+            : null
+    };
+
+    try {
+        const response = await fetch("{{ url_for('donation.create_donation') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            document.getElementById("donationMessage").innerHTML =
+                '<div class="alert alert-success">' +
+                result.message + '</div>';
+
+            document.getElementById("donationForm").reset();
+            document.getElementById("moneyFields").style.display = "none";
+            document.getElementById("materialFields").style.display = "none";
+        } else {
+            document.getElementById("donationMessage").innerHTML =
+                '<div class="alert alert-danger">' +
+                (result.message || "Donation failed") + '</div>';
+        }
+
+    } catch (error) {
+        document.getElementById("donationMessage").innerHTML =
+            '<div class="alert alert-danger">Could not connect to the server.</div>';
+    }
+});
+</script>
+
+{% endblock %}

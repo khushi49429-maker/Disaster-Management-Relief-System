@@ -1,17 +1,18 @@
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session, redirect, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from database import get_db_connection
-from flask import Blueprint, request, jsonify, session
 
 auth = Blueprint("auth", __name__)
 
 
-# USER REGISTRATION
+# ==========================================
+# 1. USER REGISTRATION
+# ==========================================
 @auth.route("/register", methods=["POST"])
 def register():
 
-    data = request.get_json()
+    data = request.get_json(silent=True) or request.form
 
     name = data.get("name")
     email = data.get("email")
@@ -20,7 +21,7 @@ def register():
     password = data.get("password")
     confirm_password = data.get("confirm_password")
 
-    # Check required fields
+    # Validate required fields
     if not all([name, email, password, confirm_password]):
         return jsonify({
             "message": "Please fill all required fields"
@@ -33,7 +34,12 @@ def register():
         }), 400
 
     # Validate gender
-    allowed_genders = ["male", "female", "other", "prefer_not_to_say"]
+    allowed_genders = [
+        "male",
+        "female",
+        "other",
+        "prefer_not_to_say"
+    ]
 
     if gender and gender not in allowed_genders:
         return jsonify({
@@ -69,12 +75,16 @@ def register():
         cursor.execute(query, values)
         db.commit()
 
-        return jsonify({
-            "message": "Registration successful"
-        }), 201
+        if request.is_json:
+            return jsonify({
+                "message": "Registration successful"
+            }), 201
+
+        return redirect(url_for("login_page"))
 
     except Exception as error:
         db.rollback()
+
         return jsonify({
             "message": "Registration failed",
             "error": str(error)
@@ -85,11 +95,13 @@ def register():
         db.close()
 
 
-# USER LOGIN
+# ==========================================
+# 2. USER LOGIN
+# ==========================================
 @auth.route("/login", methods=["POST"])
 def login():
 
-    data = request.get_json()
+    data = request.get_json(silent=True) or request.form
 
     email = data.get("email")
     password = data.get("password")
@@ -100,9 +112,6 @@ def login():
         }), 400
 
     db = get_db_connection()
-
-    print("LOGIN DB CONNECTION:", db)
-    print("LOGIN DB CONNECTED:",db.is_connected() if db else "None")
 
     if db is None:
         return jsonify({
@@ -121,11 +130,13 @@ def login():
         cursor.execute(query, (email,))
         user = cursor.fetchone()
 
+        # Check user exists
         if user is None:
             return jsonify({
                 "message": "Invalid email or password"
             }), 401
 
+        # Verify password
         stored_password = user[5]
 
         if not check_password_hash(stored_password, password):
@@ -133,20 +144,34 @@ def login():
                 "message": "Invalid email or password"
             }), 401
 
+        # Create session
+        session.clear()
         session["user_id"] = user[0]
         session["role"] = user[6]
 
-        return jsonify({
-            "message": "Login successful",
-            "user": {
-                "user_id": user[0],
-                "name": user[1],
-                "email": user[2],
-                "phone": user[3],
-                "gender": user[4],
-                "role": user[6]
-            }
-        }), 200
+        # JSON login response
+        if request.is_json:
+            return jsonify({
+                "message": "Login successful",
+                "user": {
+                    "user_id": user[0],
+                    "name": user[1],
+                    "email": user[2],
+                    "phone": user[3],
+                    "gender": user[4],
+                    "role": user[6]
+                }
+            }), 200
+
+        # Role-based redirection
+        if user[6] == "admin":
+            return redirect(url_for("admin_dashboard"))
+
+        elif user[6] == "volunteer":
+            return redirect(url_for("rescue_dashboard"))
+
+        else:
+            return redirect(url_for("user_dashboard"))
 
     except Exception as error:
         return jsonify({

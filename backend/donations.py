@@ -5,7 +5,9 @@ from database import get_db_connection
 donation = Blueprint("donation", __name__)
 
 
-# CREATE DONATION
+# ==========================================
+# 1. CREATE DONATION
+# ==========================================
 @donation.route("/donations", methods=["POST"])
 def create_donation():
 
@@ -33,11 +35,15 @@ def create_donation():
             "message": "Invalid donation type"
         }), 400
 
+    # Validate money donation
     if donation_type == "money":
+
         try:
             amount = float(amount)
+
             if amount <= 0:
                 raise ValueError
+
         except (ValueError, TypeError):
             return jsonify({
                 "message": "Enter a valid donation amount"
@@ -46,16 +52,20 @@ def create_donation():
         item_name = None
         quantity = None
 
+    # Validate material donation
     elif donation_type == "material":
+
         if not item_name:
             return jsonify({
-                "message": "Item name is required for material donation"
+                "message": "Item name is required"
             }), 400
 
         try:
             quantity = int(quantity)
+
             if quantity <= 0:
                 raise ValueError
+
         except (ValueError, TypeError):
             return jsonify({
                 "message": "Enter a valid item quantity"
@@ -73,6 +83,35 @@ def create_donation():
     cursor = db.cursor()
 
     try:
+        # Check whether donor exists
+        cursor.execute(
+            "SELECT user_id FROM users WHERE user_id = %s",
+            (donor_id,)
+        )
+
+        donor = cursor.fetchone()
+
+        if donor is None:
+            return jsonify({
+                "message": "Donor not found"
+            }), 404
+
+        # Check emergency only if emergency_id is provided
+        if emergency_id is not None:
+
+            cursor.execute(
+                "SELECT emergency_id FROM emergencies WHERE emergency_id = %s",
+                (emergency_id,)
+            )
+
+            emergency = cursor.fetchone()
+
+            if emergency is None:
+                return jsonify({
+                    "message": "Emergency not found"
+                }), 404
+
+        # Insert donation
         query = """
         INSERT INTO donations
         (doner_id, emergency_id, donation_type, amount, item_name, quantity)
@@ -80,8 +119,12 @@ def create_donation():
         """
 
         values = (
-            donor_id, emergency_id, donation_type,
-            amount, item_name, quantity
+            donor_id,
+            emergency_id,
+            donation_type,
+            amount,
+            item_name,
+            quantity
         )
 
         cursor.execute(query, values)
@@ -94,17 +137,20 @@ def create_donation():
 
     except Exception as error:
         db.rollback()
+
         return jsonify({
             "message": "Donation submission failed",
             "error": str(error)
-        }), 400
+        }), 500
 
     finally:
         cursor.close()
         db.close()
 
 
-# GET ALL DONATIONS
+# ==========================================
+# 2. GET ALL DONATIONS
+# ==========================================
 @donation.route("/donations", methods=["GET"])
 def get_donations():
 
@@ -145,26 +191,39 @@ def get_donations():
         cursor.close()
         db.close()
 
-# UPDATE DONATION STATUS
+
+# ==========================================
+# 3. UPDATE DONATION STATUS
+# ==========================================
 @donation.route("/donations/<int:donation_id>", methods=["PUT"])
 def update_donation_status(donation_id):
 
     data = request.get_json()
 
     if not data or not data.get("status"):
-        return jsonify({"message": "Please provide donation status"}), 400
+        return jsonify({
+            "message": "Please provide donation status"
+        }), 400
 
     new_status = data.get("status")
 
-    allowed_statuses = ["pending", "received", "distributed"]
+    allowed_statuses = [
+        "pending",
+        "received",
+        "distributed"
+    ]
 
     if new_status not in allowed_statuses:
-        return jsonify({"message": "Invalid donation status"}), 400
+        return jsonify({
+            "message": "Invalid donation status"
+        }), 400
 
     db = get_db_connection()
 
     if db is None:
-        return jsonify({"message": "Database connection failed"}), 500
+        return jsonify({
+            "message": "Database connection failed"
+        }), 500
 
     cursor = db.cursor()
 
@@ -177,7 +236,9 @@ def update_donation_status(donation_id):
         donation_record = cursor.fetchone()
 
         if donation_record is None:
-            return jsonify({"message": "Donation not found"}), 404
+            return jsonify({
+                "message": "Donation not found"
+            }), 404
 
         query = """
         UPDATE donations
@@ -196,6 +257,7 @@ def update_donation_status(donation_id):
 
     except Exception as error:
         db.rollback()
+
         return jsonify({
             "message": "Donation status update failed",
             "error": str(error)

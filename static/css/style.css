@@ -64,3 +64,25 @@ table {
 footer {
     margin-top: 50px;
 }
+
+/* Admin Dashboard */
+.dashboard-title {
+    color: #172554;
+    font-weight: bold;
+}
+
+.section-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+}
+
+.table th {
+    background: #172554;
+    color: white;
+    white-space: nowrap;
+}
+
+.table td {
+    vertical-align: middle;
+}

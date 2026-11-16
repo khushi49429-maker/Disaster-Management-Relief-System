@@ -1,5 +1,4 @@
-from flask import Blueprint, jsonify, session
-admin = Blueprint("admin",__name__)
+from flask import Blueprint, jsonify, session, request
 from database import get_db_connection
 
 admin = Blueprint("admin", __name__)
@@ -241,6 +240,8 @@ def get_all_emergencies():
         db.close()
 
 #6. VIEW ALL RESCUE REQUESTS
+
+#6. VIEW ALL RESCUE REQUESTS
 @admin.route("/admin/rescue-requests", methods=["GET"])
 def get_all_rescue_requests():
 
@@ -254,25 +255,15 @@ def get_all_rescue_requests():
     try:
         query = """
         SELECT
-            r.request_id,
-            r.emergency_id,
-            e.title AS emergency_title,
-            e.location AS emergency_location,
-            r.requested_by,
-            u.name AS requester_name,
-            r.assigned_to,
-            v.name AS volunteer_name,
-            r.request_details,
-            r.status,
-            r.created_at
-        FROM rescue_requests r
-        JOIN emergencies e
-            ON r.emergency_id = e.emergency_id
-        JOIN users u
-            ON r.requested_by = u.user_id
-        LEFT JOIN users v
-            ON r.assigned_to = v.user_id
-        ORDER BY r.created_at DESC
+            request_id,
+            emergency_id,
+            requested_by,
+            assigned_to,
+            request_details,
+            status,
+            created_at
+        FROM rescue_requests
+        ORDER BY created_at DESC
         """
 
         cursor.execute(query)
@@ -293,6 +284,7 @@ def get_all_rescue_requests():
     finally:
         cursor.close()
         db.close()
+
 
 #7. VIEW ALL DONATIONS
 @admin.route("/admin/donations", methods=["GET"])

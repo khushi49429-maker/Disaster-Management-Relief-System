@@ -23,17 +23,19 @@ def create_emergency():
     people_affected = data.get("people_affected", 1)
 
     #valid required fields
-    if not all([user_id, title, disaster_type, location]):
+    if not all([user_id, title and title.strip(), disaster_type and disaster_type.strip(),
+                location and location.strip()
+    ]):
         return jsonify({
             "message": "User ID, title, disaster type and location are required"
         }),400
 
-    #valid sverity 
+    #valid severity
     allowed_severity= ["low", "medium", "high", "critical"]
 
     if severity not in allowed_severity:
         return jsonify({
-            "message": "Invalid sesverity level"
+            "message": "Invalid severity level"
         }),400
 
     #Validate people affected
